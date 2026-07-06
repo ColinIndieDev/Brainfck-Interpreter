@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 
 # Name of executable
-project(Example)
+project(bf_interp)
 
 # {{{ ===== CMAKE SETTINGS =====
 
@@ -43,84 +43,6 @@ endif()
 
 # }}}
 
-# {{{ ===== DEPENDENCIES =====
-
-# Include your dependencies here with FetchContent
-
-# }}}
-
-# {{{ ===== LINKING SRC =====
-
-# Is used here but normally never do 
-# it name the files manually
-
-file(GLOB_RECURSE SOURCE_FILES CONFIGURE DEPENDS src/*.c src/*.h)
-message(STATUS "============================================")
-message(STATUS "Included files")
-message(STATUS "============================================")
-foreach(f IN LISTS SOURCE_FILES)
-    file(RELATIVE_PATH rel ${CMAKE_SOURCE_DIR} ${f})
-    message(STATUS "    ${rel}")
-endforeach()
-message(STATUS "============================================")
-
-# }}}
-
 add_executable(${CMAKE_PROJECT_NAME}
-    ${SOURCE_FILES}
+    src/main.c
 )
-
-# {{{ ===== LIBRARIES =====
-
-# pthread
-set(THREADS_PREFER_PTHREAD_FLAG TRUE)
-find_package(Threads REQUIRED)
-
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE Threads::Threads)
-
-# }}}
-
-# {{{ ===== WEB EMSCRIPTEN =====
-
-if (NOT EMSCRIPTEN)
-    set(GLFW_BUILD_WAYLAND ON CACHE BOOL "" FORCE)
-    set(GLFW_BUILD_X11 OFF CACHE BOOL "" FORCE)
-
-    target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE glfw)
-endif()
-
-if (EMSCRIPTEN)
-    set(ASSETS_DIR "${CMAKE_SOURCE_DIR}/assets")
-    set(SHADERS_DIR "${CMAKE_SOURCE_DIR}/shaders")
-    set(SHADERS_CUSTOM_DIR "${CMAKE_SOURCE_DIR}/shaders_custom")
-    target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
-        # Add folders with files to Web Build
-        "SHELL:--preload-file ${ASSETS_DIR}@/assets"
-        "SHELL:--preload-file ${SHADERS_DIR}@/shaders"
-
-        "-sSTACK_SIZE=8mb"
-	    "-sMIN_WEBGL_VERSION=2"
-	    "-sMAX_WEBGL_VERSION=2"
-        "-sUSE_GLFW=3"
-        "-sALLOW_MEMORY_GROWTH=1"
-        "-sFORCE_FILESYSTEM=1"
-    )
-
-    # Debug
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        target_link_options(Example PRIVATE
-            "-sSAFE_HEAP=1"
-            "-gsource-map"
-            "-sASSERTIONS=2"
-            "-sSTACK_SIZE=1mb"
-            "-sDISABLE_EXCEPTION_CATCHING=0"
-            "-fexceptions"
-            "-sGL_DEBUG=1"
-            "-g"
-        )
-    endif()
-
-    set_target_properties(${CMAKE_PROJECT_NAME} PROPERTIES SUFFIX ".html")
-endif()
-
-# }}}
